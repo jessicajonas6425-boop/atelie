@@ -2,8 +2,11 @@ import React from 'react';
 import { Smartphone } from 'lucide-react';
 import { motion } from 'motion/react';
 
-export const FloatingWhatsApp: React.FC = () => {
-  const whatsappNumber = "5511940288573";
+interface FloatingWhatsAppProps {
+  whatsappNumber?: string;
+}
+
+export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ whatsappNumber = "5511940288573" }) => {
   const label = "PRECISA DE AJUDA? CHAME AGORA";
 
   return (

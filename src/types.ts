@@ -29,6 +29,12 @@ export interface Order {
   total: number;
   shippingCost?: number;
   cep?: string;
+  street?: string;
+  number?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  complement?: string;
   paymentMethod?: 'pix' | 'credit' | 'debit';
   status: 'pending' | 'processing' | 'completed' | 'cancelled';
   createdAt: any;
@@ -37,7 +43,7 @@ export interface Order {
 
 export interface Settings {
   whatsappNumber: string;
-  email: string;
+  emailLink: string;
   instagram?: string;
   facebook?: string;
 }

@@ -4,7 +4,8 @@ import {
   addDoc, 
   serverTimestamp, 
   query, 
-  onSnapshot
+  onSnapshot,
+  doc
 } from 'firebase/firestore';
 import { 
   signInWithEmailAndPassword, 
@@ -89,20 +90,28 @@ export default function App() {
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [customerInfo, setCustomerInfo] = useState({ name: '', whatsapp: '', cep: '' });
+  const [customerInfo, setCustomerInfo] = useState({ 
+    name: '', 
+    whatsapp: '', 
+    cep: '',
+    street: '',
+    number: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+    complement: ''
+  });
   const [shippingCost, setShippingCost] = useState<number | null>(null);
   const [calculatingShipping, setCalculatingShipping] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'pix' | 'credit' | 'debit'>('pix');
+  const [settings, setSettings] = useState<Settings>({ whatsappNumber: '5562999999999', instagram: '#', facebook: '#', emailLink: 'contato@atelievlm.com.br' });
 
-  // Simulation of Correios API for shipping calculation
-  const calculateShipping = async () => {
-    if (customerInfo.cep.length < 8) return;
+  // Simulation of shipping calculation
+  const performShippingCalculation = async (cep: string) => {
     setCalculatingShipping(true);
     try {
-      // Small simulation delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      // Base calculation logic: deterministic based on first digit of CEP
-      const base = parseInt(customerInfo.cep[0]) || 5;
+      await new Promise(resolve => setTimeout(resolve, 600));
+      const base = parseInt(cep[0]) || 5;
       const cost = 12 + (base * 3.5);
       setShippingCost(cost);
     } catch (e) {
@@ -111,6 +120,38 @@ export default function App() {
       setCalculatingShipping(false);
     }
   };
+
+  const calculateShipping = () => performShippingCalculation(customerInfo.cep);
+
+  // Auto-fetch CEP and calculate shipping
+  useEffect(() => {
+    if (customerInfo.cep.length === 8) {
+      const fetchAddress = async () => {
+        setCalculatingShipping(true);
+        try {
+          const response = await fetch(`https://viacep.com.br/ws/${customerInfo.cep}/json/`);
+          const data = await response.json();
+          if (!data.erro) {
+            setCustomerInfo(prev => ({
+              ...prev,
+              street: data.logradouro || '',
+              neighborhood: data.bairro || '',
+              city: data.localidade || '',
+              state: data.uf || ''
+            }));
+            await performShippingCalculation(customerInfo.cep);
+          }
+        } catch (e) {
+          console.error("CEP fetch error", e);
+        } finally {
+          setCalculatingShipping(false);
+        }
+      };
+      fetchAddress();
+    } else {
+      setShippingCost(null);
+    }
+  }, [customerInfo.cep]);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
 
@@ -145,9 +186,19 @@ export default function App() {
       }
     });
 
+    const settingsPath = 'settings';
+    const unsubscribeSettings = onSnapshot(doc(db, settingsPath, 'globals'), (docSnap) => {
+      if (docSnap.exists()) {
+        setSettings(docSnap.data() as any);
+      }
+    }, (err) => {
+      console.error("Settings sync error:", err);
+    });
+
     return () => {
       unsubscribeAuth();
       unsubscribeProducts();
+      unsubscribeSettings();
     };
   }, []);
 
@@ -210,6 +261,12 @@ export default function App() {
       customerName: customerInfo.name,
       customerWhatsapp: customerInfo.whatsapp,
       cep: customerInfo.cep,
+      street: customerInfo.street,
+      number: customerInfo.number,
+      neighborhood: customerInfo.neighborhood,
+      city: customerInfo.city,
+      state: customerInfo.state,
+      complement: customerInfo.complement,
       shippingCost: shippingCost,
       paymentMethod: paymentMethod,
       items: cart,
@@ -222,19 +279,24 @@ export default function App() {
       const docRef = await addDoc(collection(db, 'orders'), orderData);
       
       // WhatsApp message generation with full details
-      const trackingLink = `${window.location.origin}/?orderId=${docRef.id}`;
+      const trackingLink = `${window.location.origin}/order/${docRef.id}`;
       const paymentLabels = { pix: 'PIX', credit: 'Cartão de Crédito', debit: 'Cartão de Débito' };
       
       let message = `*RESUMO DO PEDIDO - ATELIÊ VLM*\n\n`;
       message += `📌 *DADOS DO CLIENTE*\n`;
       message += `*Nome:* ${customerInfo.name}\n`;
       message += `*WhatsApp:* ${customerInfo.whatsapp}\n`;
-      message += `*CEP:* ${customerInfo.cep}\n\n`;
+      message += `*CEP:* ${customerInfo.cep}\n`;
+      message += `*Endereço:* ${customerInfo.street}, ${customerInfo.number}\n`;
+      if (customerInfo.complement) message += `*Comp.:* ${customerInfo.complement}\n`;
+      message += `*Bairro:* ${customerInfo.neighborhood}\n`;
+      message += `*Cidade:* ${customerInfo.city} / ${customerInfo.state}\n\n`;
       
       message += `🛍️ *ITENS ESCOLHIDOS*\n`;
       cart.forEach(item => {
         message += `• ${item.quantity}x ${item.name}\n`;
-        message += `  Valor: R$ ${item.price.toFixed(2)}\n`;
+        message += `  Valor Un.: R$ ${item.price.toFixed(2)}\n`;
+        message += `  Subtotal: R$ ${(item.price * item.quantity).toFixed(2)}\n`;
         if (item.imageUrl) message += `  🖼️ *Foto:* ${item.imageUrl}\n`;
         if (item.personalizationName) message += `  *Gravação:* ${item.personalizationName}\n`;
         if (item.complementDescription) message += `  *Complemento:* ${item.complementDescription}\n`;
@@ -251,11 +313,21 @@ export default function App() {
       message += `🔗 *ACOMPANHE SEU PEDIDO COM IMAGENS:*\n`;
       message += `${trackingLink}`;
       
-      const whatsappUrl = `https://wa.me/5511940288573?text=${encodeURIComponent(message)}`;
+      const whatsappUrl = `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, '_blank');
       
       setCart([]);
-      setCustomerInfo({ name: '', whatsapp: '', cep: '' });
+      setCustomerInfo({ 
+        name: '', 
+        whatsapp: '', 
+        cep: '',
+        street: '',
+        number: '',
+        neighborhood: '',
+        city: '',
+        state: '',
+        complement: ''
+      });
       setShippingCost(null);
       setView('home');
       alert("Pedido realizado com sucesso!");
@@ -524,55 +596,107 @@ export default function App() {
                   </div>
 
                   <div className="vlm-card p-10 bg-white">
-                    <h3 className="text-3xl font-serif italic mb-10 text-black">Informações para Contato.</h3>
+                    <h3 className="text-3xl font-serif italic mb-10 text-black">Informações de Entrega.</h3>
                     <div className="space-y-8">
-                      <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] block mb-3">Nome / Empresa</label>
-                        <input 
-                          className="vlm-input w-full text-xl font-serif italic"
-                          value={customerInfo.name}
-                          onChange={(e: any) => setCustomerInfo({...customerInfo, name: e.target.value})}
-                          placeholder="Quem solicita?"
-                        />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] block mb-3">Nome / Empresa</label>
+                          <input 
+                            className="vlm-input w-full text-xl font-serif italic"
+                            value={customerInfo.name}
+                            onChange={(e: any) => setCustomerInfo({...customerInfo, name: e.target.value})}
+                            placeholder="Quem solicita?"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] block mb-3">WhatsApp</label>
+                          <input 
+                            className="vlm-input w-full text-xl font-mono"
+                            type="tel" 
+                            value={customerInfo.whatsapp}
+                            onChange={(e: any) => setCustomerInfo({...customerInfo, whatsapp: e.target.value})}
+                            placeholder="( ) 00000-0000"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] block mb-3">WhatsApp de Resposta</label>
-                        <input 
-                          className="vlm-input w-full text-xl font-mono"
-                          type="tel" 
-                          value={customerInfo.whatsapp}
-                          onChange={(e: any) => setCustomerInfo({...customerInfo, whatsapp: e.target.value})}
-                          placeholder="( ) 00000-0000"
-                        />
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div className="md:col-span-1">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] block mb-3">CEP de Entrega</label>
+                          <input 
+                            className="vlm-input w-full text-xl font-mono"
+                            value={customerInfo.cep}
+                            onChange={(e: any) => setCustomerInfo({...customerInfo, cep: e.target.value.replace(/\D/g, '').slice(0, 8)})}
+                            placeholder="00000-000"
+                          />
+                          {calculatingShipping && <p className="text-[9px] text-[#E30613] font-black mt-2 pulse">CALCULANDO...</p>}
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] block mb-3">Logradouro / Rua</label>
+                          <input 
+                            className="vlm-input w-full text-lg font-serif italic"
+                            value={customerInfo.street}
+                            onChange={(e: any) => setCustomerInfo({...customerInfo, street: e.target.value})}
+                            placeholder="Rua, Av..."
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] block mb-3">Número</label>
+                          <input 
+                            className="vlm-input w-full text-xl font-serif italic"
+                            value={customerInfo.number}
+                            onChange={(e: any) => setCustomerInfo({...customerInfo, number: e.target.value})}
+                            placeholder="Nº"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] block mb-3">Bairro</label>
+                          <input 
+                            className="vlm-input w-full text-lg font-serif italic"
+                            value={customerInfo.neighborhood}
+                            onChange={(e: any) => setCustomerInfo({...customerInfo, neighborhood: e.target.value})}
+                            placeholder="Bairro"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] block mb-3">Comp.</label>
+                          <input 
+                            className="vlm-input w-full text-lg font-serif italic"
+                            value={customerInfo.complement}
+                            onChange={(e: any) => setCustomerInfo({...customerInfo, complement: e.target.value})}
+                            placeholder="Apt, Sala"
+                          />
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] block mb-3">CEP de Entrega</label>
-                          <div className="flex flex-col sm:flex-row gap-4">
-                            <input 
-                              className="vlm-input flex-1 text-xl font-mono"
-                              value={customerInfo.cep}
-                              onChange={(e: any) => setCustomerInfo({...customerInfo, cep: e.target.value.replace(/\D/g, '').slice(0, 8)})}
-                              placeholder="00000-000"
-                            />
-                            <Button 
-                              variant="outline" 
-                              onClick={calculateShipping}
-                              disabled={calculatingShipping || customerInfo.cep.length < 8}
-                              className="w-full sm:w-auto h-16 md:h-auto"
-                            >
-                              {calculatingShipping ? '...' : 'CALCULAR'}
-                            </Button>
-                          </div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] block mb-3">Cidade</label>
+                          <input 
+                            className="vlm-input w-full text-lg font-serif italic"
+                            value={customerInfo.city}
+                            readOnly
+                          />
                         </div>
-                        {shippingCost !== null && (
-                          <div className="bg-slate-50 p-6 flex items-center justify-between border border-slate-900/5">
-                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Frete Estimado</span>
-                            <span className="text-xl font-serif font-black text-black">R$ {shippingCost.toFixed(2)}</span>
-                          </div>
-                        )}
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] block mb-3">UF</label>
+                          <input 
+                            className="vlm-input w-full text-lg font-serif italic"
+                            value={customerInfo.state}
+                            readOnly
+                          />
+                        </div>
                       </div>
+
+                      {shippingCost !== null && (
+                        <div className="bg-slate-900 p-6 flex items-center justify-between border-l-4 border-red-600">
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Frete Calculado</span>
+                          <span className="text-xl font-serif font-black text-white italic">R$ {shippingCost.toFixed(2)}</span>
+                        </div>
+                      )}
 
                       <div>
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] block mb-6">Forma de Pagamento</label>
@@ -584,7 +708,7 @@ export default function App() {
                               className={cn(
                                 "flex items-center justify-center gap-4 p-6 border transition-all uppercase text-[10px] font-black tracking-widest",
                                 paymentMethod === method 
-                                  ? "bg-black text-white border-black" 
+                                  ? "bg-[#E30613] text-white border-[#E30613]" 
                                   : "bg-white text-slate-400 border-slate-100 hover:border-slate-300"
                               )}
                             >
@@ -599,7 +723,7 @@ export default function App() {
                         className="w-full mt-10 h-24 text-lg bg-red-600 hover:bg-black" 
                         onClick={submitOrder} 
                         id="finish-order-btn"
-                        disabled={!customerInfo.name || !customerInfo.whatsapp || shippingCost === null}
+                        disabled={!customerInfo.name || !customerInfo.whatsapp || !customerInfo.street || shippingCost === null}
                       >
                         FINALIZAR E ENVIAR WHATSAPP
                       </Button>
@@ -634,7 +758,13 @@ export default function App() {
                   <div className="border-l-4 border-red-600 pl-6 md:pl-8">
                     <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] mb-4">Identificação do Pedido</p>
                     <p className="text-3xl md:text-4xl font-serif italic mb-2 text-black">{trackingOrder.customerName}</p>
-                    <p className="text-[10px] md:text-xs font-black uppercase text-red-600 tracking-widest">{trackingOrder.customerWhatsapp}</p>
+                    <p className="text-[10px] md:text-xs font-black uppercase text-red-600 tracking-widest leading-loose">
+                      WhatsApp: {trackingOrder.customerWhatsapp}<br/>
+                      Endereço: {trackingOrder.street}, {trackingOrder.number}<br/>
+                      {trackingOrder.complement && <span>Comp: {trackingOrder.complement}<br/></span>}
+                      {trackingOrder.neighborhood} - {trackingOrder.city}/{trackingOrder.state}<br/>
+                      CEP: {trackingOrder.cep}
+                    </p>
                   </div>
 
                   <div>
@@ -709,7 +839,8 @@ export default function App() {
               Mais de 70.000 opções de brindes corporativos para sua empresa. Qualidade, exclusividade e entrega rápida.
             </p>
             <div className="flex gap-4">
-              <a href="#" className="p-4 bg-white border border-slate-200 hover:border-red-500 hover:text-red-600 transition-all rounded-full"><Instagram size={20} /></a>
+              <a href={settings.instagram} target="_blank" rel="noopener noreferrer" className="p-4 bg-white border border-slate-200 hover:border-red-500 hover:text-red-600 transition-all rounded-full"><Instagram size={20} /></a>
+              {settings.facebook && <a href={settings.facebook} target="_blank" rel="noopener noreferrer" className="p-4 bg-white border border-slate-200 hover:border-red-500 hover:text-red-600 transition-all rounded-full"><Facebook size={20} /></a>}
             </div>
           </div>
 
@@ -725,8 +856,14 @@ export default function App() {
             <div className="space-y-8">
               <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Fale Conosco</h4>
               <ul className="space-y-4 text-xs font-sans font-bold uppercase tracking-[0.1em] text-slate-600">
-                <li className="flex items-center gap-3 font-mono"><Smartphone size={16} className="text-red-500" /> +55 11 94028-8573</li>
-                <li className="flex items-center gap-3"><Mail size={16} className="text-red-500" /> atelievlm@gmail.com</li>
+                <li className="flex items-center gap-3 font-mono">
+                  <Smartphone size={16} className="text-red-500" /> 
+                  {settings.whatsappNumber ? `+${settings.whatsappNumber.slice(0,2)} ${settings.whatsappNumber.slice(2,4)} ${settings.whatsappNumber.slice(4,9)}-${settings.whatsappNumber.slice(9)}` : '+55 11 94028-8573'}
+                </li>
+                <li className="flex items-center gap-3">
+                  <Mail size={16} className="text-red-500" /> 
+                  {settings.emailLink || 'atelievlm@gmail.com'}
+                </li>
                 <li className="mt-8 text-red-600 font-black">SÃO PAULO . BR</li>
               </ul>
             </div>
@@ -800,7 +937,7 @@ export default function App() {
         )}
       </AnimatePresence>
       <AIAssistant />
-      <FloatingWhatsApp />
+      <FloatingWhatsApp whatsappNumber={settings.whatsappNumber} />
     </div>
   );
 }

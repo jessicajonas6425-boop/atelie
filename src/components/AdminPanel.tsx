@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, orderBy, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
-import { Order, Product } from '../types';
+import { Order, Product, Settings } from '../types';
 import { Button, cn } from './ui/Button';
 import { Search, Package, CheckCircle2, Clock, XCircle, LogOut, ChevronRight, User, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -10,8 +10,9 @@ export const AdminPanel: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'orders' | 'products'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'settings'>('orders');
   const [products, setProducts] = useState<Product[]>([]);
+  const [settings, setSettings] = useState<Settings>({ whatsappNumber: '', instagram: '', facebook: '', emailLink: '' });
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [showProductModal, setShowProductModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -40,9 +41,19 @@ export const AdminPanel: React.FC = () => {
       handleFirestoreError(err, OperationType.GET, productsPath);
     });
 
+    const settingsPath = 'settings';
+    const unsubscribeSettings = onSnapshot(doc(db, settingsPath, 'globals'), (docSnap) => {
+      if (docSnap.exists()) {
+        setSettings(docSnap.data() as any);
+      }
+    }, (err) => {
+      console.error("Settings sync error:", err);
+    });
+
     return () => {
       unsubscribeOrders();
       unsubscribeProducts();
+      unsubscribeSettings();
     };
   }, []);
 
@@ -64,6 +75,17 @@ export const AdminPanel: React.FC = () => {
       setEditingProduct(null);
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'products');
+    }
+  };
+
+  const handleSettingsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { setDoc, doc } = await import('firebase/firestore');
+      await setDoc(doc(db, 'settings', 'globals'), settings);
+      alert("Configurações atualizadas com sucesso!");
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'settings/globals');
     }
   };
 
@@ -139,6 +161,15 @@ export const AdminPanel: React.FC = () => {
               )}
             >
               Acervo de Peças
+            </button>
+            <button 
+              onClick={() => setActiveTab('settings')}
+              className={cn(
+                "text-[10px] font-black uppercase tracking-[0.4em] pb-6 border-b-4 transition-all duration-700 -mb-px",
+                activeTab === 'settings' ? "border-[#E30613] text-black" : "border-transparent text-slate-300 hover:text-black"
+              )}
+            >
+              Canais & Links
             </button>
           </div>
         </div>
@@ -245,7 +276,18 @@ export const AdminPanel: React.FC = () => {
                     <div className="bg-slate-50 p-8 md:p-12 border border-slate-900/5 relative">
                       <p className="text-[10px] font-black text-slate-200 uppercase tracking-[0.5em] mb-4 md:mb-6">Sujeito da Cotação</p>
                       <p className="text-3xl md:text-4xl font-serif italic mb-3 text-black font-black leading-tight">{selectedOrder.customerName}</p>
-                      <p className="text-[11px] md:text-[12px] font-mono text-red-600 font-bold tracking-[0.2em]">{selectedOrder.customerWhatsapp}</p>
+                      <p className="text-[11px] md:text-[12px] font-mono text-red-600 font-bold tracking-[0.2em] mb-6">{selectedOrder.customerWhatsapp}</p>
+                      
+                      <div className="pt-6 border-t border-slate-900/10">
+                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] mb-3">Endereço de Entrega</p>
+                        <p className="text-sm font-sans font-bold text-black uppercase tracking-wide leading-relaxed">
+                          {selectedOrder.street}, {selectedOrder.number}<br/>
+                          {selectedOrder.complement && <span className="text-[11px] text-slate-400">Comp: {selectedOrder.complement}<br/></span>}
+                          {selectedOrder.neighborhood}<br/>
+                          {selectedOrder.city} - {selectedOrder.state}<br/>
+                          CEP: {selectedOrder.cep}
+                        </p>
+                      </div>
                     </div>
 
                     <div>
@@ -330,7 +372,7 @@ export const AdminPanel: React.FC = () => {
             </AnimatePresence>
           </div>
         </div>
-      ) : (
+      ) : activeTab === 'products' ? (
         <div className="bg-white border border-slate-900/5 shadow-2xl relative overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -374,6 +416,58 @@ export const AdminPanel: React.FC = () => {
               </tbody>
             </table>
           </div>
+        </div>
+      ) : (
+        <div className="max-w-4xl bg-white border border-slate-900/10 p-8 md:p-16 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-2 h-full bg-[#E30613]"></div>
+          <h2 className="text-4xl md:text-5xl font-serif italic text-black font-black mb-12">Canais de Comunicação.</h2>
+          <form onSubmit={handleSettingsSubmit} className="space-y-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="space-y-6">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] block mb-3">WhatsApp da Loja (DDI+DDD+Número)</label>
+                  <input 
+                    className="vlm-input w-full text-xl font-mono"
+                    value={settings.whatsappNumber}
+                    onChange={(e) => setSettings({...settings, whatsappNumber: e.target.value.replace(/\D/g, '')})}
+                    placeholder="5500000000000"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] block mb-3">Instagram URL</label>
+                  <input 
+                    className="vlm-input w-full text-sm font-mono text-slate-500"
+                    value={settings.instagram}
+                    onChange={(e) => setSettings({...settings, instagram: e.target.value})}
+                    placeholder="https://instagram.com/seuusuario"
+                  />
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] block mb-3">E-mail de Contato</label>
+                  <input 
+                    className="vlm-input w-full text-lg font-serif italic"
+                    value={settings.emailLink}
+                    onChange={(e) => setSettings({...settings, emailLink: e.target.value})}
+                    placeholder="contato@atelievlm.com.br"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] block mb-3">Facebook URL</label>
+                  <input 
+                    className="vlm-input w-full text-sm font-mono text-slate-500"
+                    value={settings.facebook}
+                    onChange={(e) => setSettings({...settings, facebook: e.target.value})}
+                    placeholder="https://facebook.com/suapagina"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="pt-10 border-t border-slate-900/5">
+              <Button type="submit" className="w-full md:w-auto px-16 h-20 bg-black text-white">SALVAR CONFIGURAÇÕES</Button>
+            </div>
+          </form>
         </div>
       )}
 
