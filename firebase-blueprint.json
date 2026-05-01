@@ -1,0 +1,62 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Product available in the store",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "category": { "type": "string", "enum": ["Garrafa", "Garrafa (PERSONALIZAR)", "Caneca", "Azulejo", "Caneleira", "Camiseta"] },
+        "imageUrl": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "hasComplements": { "type": "boolean" }
+      },
+      "required": ["name", "price", "category", "imageUrl"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerWhatsapp": { "type": "string" },
+        "items": { "type": "array" },
+        "total": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "processing", "completed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "customizationData": { "type": "string", "description": "Base64 or URL of customization image" }
+      },
+      "required": ["customerName", "customerWhatsapp", "items", "total", "status", "createdAt"]
+    },
+    "Setting": {
+      "title": "Setting",
+      "description": "Global store settings like social media links",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "enum": ["globals"] },
+        "whatsappNumber": { "type": "string" },
+        "email": { "type": "string" },
+        "instagram": { "type": "string" },
+        "facebook": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "products": {
+      "schema": "Product",
+      "description": "Store products"
+    },
+    "orders": {
+      "schema": "Order",
+      "description": "Customer orders"
+    },
+    "settings": {
+      "schema": "Setting",
+      "description": "Store configuration"
+    }
+  }
+}

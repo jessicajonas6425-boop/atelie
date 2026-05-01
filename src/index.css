@@ -1,0 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=JetBrains+Mono:wght@500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  body {
+    @apply antialiased bg-white text-black selection:bg-red-50;
+    font-feature-settings: "ss01", "ss02", "cv01";
+  }
+}
+
+@layer components {
+  .vlm-card {
+    @apply bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300;
+  }
+  
+  .vlm-btn-primary {
+    @apply bg-[#E30613] text-white font-bold uppercase tracking-[0.2em] text-[11px] px-8 py-4 hover:bg-black transition-all duration-300;
+  }
+
+  .vlm-label {
+    @apply text-[10px] font-bold uppercase tracking-[0.2em] text-[#E30613] bg-red-50 px-3 py-1 inline-block mb-3 border-l-2 border-[#E30613];
+  }
+
+  .vlm-input {
+    @apply bg-white border border-slate-200 px-4 py-3 focus:outline-none focus:border-[#E30613] transition-all text-black placeholder:text-slate-400 font-sans;
+  }
+}
+
+@keyframes slide-loading {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-slide-loading {
+  animation: slide-loading 2s infinite ease-in-out;
+}

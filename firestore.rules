@@ -1,0 +1,86 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'jessicajonas6425@gmail.com' ||
+        request.auth.token.email == 'viviane@x.com'
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation helpers
+    function isValidProduct(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
+             data.price is number && data.price >= 0 &&
+             data.category is string && 
+             data.imageUrl is string &&
+             data.keys().hasAll(['name', 'price', 'category', 'imageUrl']) &&
+             data.keys().size() >= 4;
+    }
+
+    function isValidOrder(data) {
+      return data.customerName is string && data.customerName.size() > 0 &&
+             data.customerWhatsapp is string && data.customerWhatsapp.size() > 0 &&
+             data.items is list && data.items.size() > 0 &&
+             data.total is number &&
+             data.status in ['pending', 'processing', 'completed', 'cancelled'] &&
+             data.createdAt == request.time &&
+             data.keys().hasAll(['customerName', 'customerWhatsapp', 'items', 'total', 'status', 'createdAt']) &&
+             data.keys().size() >= 6;
+    }
+
+    // 0.1 Connection Test
+    match /test/connection {
+      allow read: if true;
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidProduct(incoming()) && isValidId(productId);
+      allow update: if isAdmin() && isValidProduct(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'price', 'category', 'imageUrl', 'description', 'isActive'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow create: if isValidOrder(incoming());
+      allow read: if isAdmin();
+      allow update: if isAdmin() && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['status'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
