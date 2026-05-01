@@ -116,12 +116,12 @@ export const AdminPanel: React.FC = () => {
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-12 py-32 font-sans bg-[#FCFAF7]">
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-32 gap-16">
+    <div className="max-w-7xl mx-auto px-4 md:px-12 py-12 md:py-32 font-sans bg-[#FCFAF7]">
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 md:mb-32 gap-8 md:gap-16">
         <div>
-          <div className="vlm-label mb-6">Gestão Ateliê VLM</div>
-          <h1 className="text-8xl font-serif italic font-black tracking-tighter text-black leading-none">Portal.<br/><span className="text-[#E30613] text-[0.8em] font-black uppercase not-italic">Controle</span></h1>
-          <div className="flex gap-16 mt-16 border-b border-slate-900/5">
+          <div className="vlm-label mb-4 md:mb-6">Gestão Ateliê VLM</div>
+          <h1 className="text-5xl md:text-8xl font-serif italic font-black tracking-tighter text-black leading-none text-center md:text-left">Portal.<br/><span className="text-[#E30613] text-[0.8em] font-black uppercase not-italic">Controle</span></h1>
+          <div className="flex gap-8 md:gap-16 mt-12 md:mt-16 border-b border-slate-900/5 overflow-x-auto">
             <button 
               onClick={() => setActiveTab('orders')}
               className={cn(
@@ -142,17 +142,17 @@ export const AdminPanel: React.FC = () => {
             </button>
           </div>
         </div>
-        <div className="flex items-center gap-8">
+        <div className="flex items-center justify-between md:justify-end gap-4 md:gap-8 w-full md:w-auto">
           {activeTab === 'products' && (
             <Button 
               onClick={() => { setEditingProduct({}); setShowProductModal(true); }}
               id="add-product-btn"
-              className="px-12 bg-slate-900 text-white"
+              className="flex-1 md:flex-none px-6 md:px-12 bg-slate-900 text-white text-[10px] md:text-base h-16 md:h-20"
             >
               NOVO ITEM
             </Button>
           )}
-          <Button variant="ghost" onClick={() => auth.signOut()} className="px-10 text-gray-400 hover:text-black" id="admin-logout-btn">
+          <Button variant="ghost" onClick={() => auth.signOut()} className="px-6 md:px-10 text-gray-400 hover:text-black text-[10px] md:text-base h-16 md:h-20" id="admin-logout-btn">
             SAIR.
           </Button>
         </div>
@@ -166,11 +166,11 @@ export const AdminPanel: React.FC = () => {
                 <table className="w-full text-left">
                   <thead className="bg-[#FAF9F7] border-b border-slate-900/5 text-slate-400">
                     <tr>
-                      <th className="px-10 py-10 text-[9px] font-black uppercase tracking-[0.5em]">Referência</th>
-                      <th className="px-10 py-10 text-[9px] font-black uppercase tracking-[0.5em]">Cliente</th>
-                      <th className="px-10 py-10 text-[9px] font-black uppercase tracking-[0.5em]">Valor</th>
-                      <th className="px-10 py-10 text-[9px] font-black uppercase tracking-[0.5em]">Status</th>
-                      <th className="px-10 py-10"></th>
+                      <th className="px-4 md:px-10 py-6 md:py-10 text-[9px] font-black uppercase tracking-[0.5em]">Ref</th>
+                      <th className="px-4 md:px-10 py-6 md:py-10 text-[9px] font-black uppercase tracking-[0.5em]">Cliente</th>
+                      <th className="px-4 md:px-10 py-6 md:py-10 text-[9px] font-black uppercase tracking-[0.5em] hidden sm:table-cell">Valor</th>
+                      <th className="px-4 md:px-10 py-6 md:py-10 text-[9px] font-black uppercase tracking-[0.5em]">Status</th>
+                      <th className="px-4 md:px-10 py-6 md:py-10"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -180,40 +180,41 @@ export const AdminPanel: React.FC = () => {
                         className={cn("hover:bg-slate-50 transition-colors cursor-pointer group", selectedOrder?.id === order.id && "bg-red-50/50")}
                         onClick={() => setSelectedOrder(order)}
                       >
-                        <td className="px-10 py-14">
-                          <span className="text-[12px] font-mono font-black text-[#E30613]">#{order.id?.slice(-8).toUpperCase()}</span>
-                          <div className="text-[9px] text-slate-300 font-black tracking-[0.3em] mt-3 uppercase italic">
+                        <td className="px-4 md:px-10 py-8 md:py-14">
+                          <span className="text-[11px] md:text-[12px] font-mono font-black text-[#E30613]">#{order.id?.slice(-4).toUpperCase()}</span>
+                          <div className="text-[8px] md:text-[9px] text-slate-300 font-black tracking-[0.3em] mt-2 uppercase italic">
                             {new Date(order.createdAt?.seconds * 1000).toLocaleDateString('pt-BR')}
                           </div>
                         </td>
-                        <td className="px-10 py-14">
-                          <div className="text-4xl font-serif italic text-black font-black">{order.customerName}</div>
-                          <div className="text-[11px] font-black text-gray-500 tracking-[0.4em] mt-3 uppercase flex flex-col gap-1">
+                        <td className="px-4 md:px-10 py-8 md:py-14">
+                          <div className="text-xl md:text-4xl font-serif italic text-black font-black leading-tight">{order.customerName}</div>
+                          <div className="text-[9px] md:text-[11px] font-black text-gray-500 tracking-[0.2em] md:tracking-[0.4em] mt-2 uppercase flex flex-col gap-1">
                             <span>WA: {order.customerWhatsapp}</span>
-                            {order.cep && <span>CEP: {order.cep}</span>}
+                            {order.cep && <span className="hidden sm:inline">CEP: {order.cep}</span>}
                           </div>
                         </td>
-                        <td className="px-10 py-14 text-2xl font-serif font-black text-black italic">
+                        <td className="px-4 md:px-10 py-8 md:py-14 text-lg md:text-2xl font-serif font-black text-black italic hidden sm:table-cell">
                           <div className="flex flex-col">
                             <span>R$ {order.total.toFixed(2)}</span>
                             {order.paymentMethod && (
-                              <span className="text-[9px] uppercase tracking-widest text-red-600 font-black">{order.paymentMethod}</span>
+                              <span className="text-[8px] md:text-[9px] uppercase tracking-widest text-[#E30613] font-black">{order.paymentMethod}</span>
                             )}
                           </div>
                         </td>
-                        <td className="px-10 py-14">
+                        <td className="px-4 md:px-10 py-8 md:py-14">
                           <div className={cn(
-                            "px-6 py-2 text-[9px] font-black uppercase tracking-[0.4em] inline-flex items-center gap-4 rounded-full border",
+                            "px-3 md:px-6 py-1 md:py-2 text-[8px] md:text-[9px] font-black uppercase tracking-[0.4em] inline-flex items-center gap-2 md:gap-4 rounded-full border",
                             order.status === 'completed' ? "bg-green-500/10 border-green-500/30 text-green-600" : 
                             order.status === 'processing' ? "bg-blue-500/10 border-blue-500/30 text-blue-600" :
                             order.status === 'cancelled' ? "bg-red-500/10 border-red-500/30 text-red-600" :
                             "bg-red-500/10 border-red-500/30 text-red-600"
                           )}>
-                             {order.status}
+                             <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                             <span className="hidden xs:inline">{order.status}</span>
                           </div>
                         </td>
-                        <td className="px-10 py-14 text-right">
-                          <ChevronRight className="w-8 h-8 text-slate-100 group-hover:text-red-500 transition-all transform group-hover:translate-x-3 inline" strokeWidth={3} />
+                        <td className="px-4 md:px-10 py-8 md:py-14 text-right">
+                          <ChevronRight className="w-6 h-6 md:w-8 md:h-8 text-slate-100 group-hover:text-red-500 transition-all transform group-hover:translate-x-3 inline" strokeWidth={3} />
                         </td>
                       </tr>
                     ))}
@@ -228,63 +229,71 @@ export const AdminPanel: React.FC = () => {
               {selectedOrder ? (
                 <motion.div 
                   key={selectedOrder.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 30 }}
-                  className="bg-white border border-slate-900/10 p-16 shadow-[0px_100px_200px_rgba(0,0,0,0.1)] sticky top-40 relative overflow-hidden"
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 50 }}
+                  className="fixed xl:sticky inset-0 xl:top-40 z-[150] xl:z-auto bg-white xl:bg-white border-l border-slate-900/10 p-6 md:p-16 shadow-[0px_100px_200px_rgba(0,0,0,0.1)] overflow-y-auto h-full xl:h-auto"
                 >
-                  <div className="absolute top-0 left-0 w-2 h-full bg-[#E30613]"></div>
-                  <div className="flex justify-between items-start mb-16">
-                    <h2 className="text-5xl font-serif italic text-black font-black">Dossiê.</h2>
-                    <button onClick={() => setSelectedOrder(null)} className="text-[10px] uppercase font-black tracking-[0.4em] text-slate-200 hover:text-red-500 transition-colors">Fechar ×</button>
+                  <div className="absolute top-0 left-0 w-2 h-full bg-[#E30613] hidden xl:block"></div>
+                  <div className="absolute top-0 left-0 w-full h-1.5 bg-[#E30613] xl:hidden"></div>
+                  <div className="flex justify-between items-start mb-12 md:mb-16 mt-8 xl:mt-0">
+                    <h2 className="text-4xl md:text-5xl font-serif italic text-black font-black">Dossiê.</h2>
+                    <button onClick={() => setSelectedOrder(null)} className="p-4 bg-slate-50 rounded-full text-[10px] uppercase font-black tracking-[0.4em] text-black hover:text-red-500 transition-colors">FECHAR ×</button>
                   </div>
 
-                  <div className="space-y-16">
-                    <div className="bg-slate-50 p-12 border border-slate-900/5 relative">
-                      <p className="text-[10px] font-black text-slate-200 uppercase tracking-[0.5em] mb-6">Sujeito da Cotação</p>
-                      <p className="text-4xl font-serif italic mb-3 text-black font-black">{selectedOrder.customerName}</p>
-                      <p className="text-[12px] font-mono text-red-600 font-bold tracking-[0.2em]">{selectedOrder.customerWhatsapp}</p>
+                  <div className="space-y-12 md:space-y-16">
+                    <div className="bg-slate-50 p-8 md:p-12 border border-slate-900/5 relative">
+                      <p className="text-[10px] font-black text-slate-200 uppercase tracking-[0.5em] mb-4 md:mb-6">Sujeito da Cotação</p>
+                      <p className="text-3xl md:text-4xl font-serif italic mb-3 text-black font-black leading-tight">{selectedOrder.customerName}</p>
+                      <p className="text-[11px] md:text-[12px] font-mono text-red-600 font-bold tracking-[0.2em]">{selectedOrder.customerWhatsapp}</p>
                     </div>
 
                     <div>
-                      <p className="text-[10px] font-black text-slate-200 uppercase tracking-[0.5em] mb-10">Conteúdo do Acervo</p>
-                      <div className="space-y-8">
+                      <p className="text-[10px] font-black text-slate-200 uppercase tracking-[0.5em] mb-8 md:mb-10">Conteúdo do Acervo</p>
+                      <div className="space-y-6 md:space-y-8">
                         {selectedOrder.items.map((item, idx) => (
-                          <div key={idx} className="flex flex-col border-b border-slate-900/5 pb-8">
-                            <div className="flex justify-between text-base items-baseline">
-                              <span className="text-gray-500 uppercase font-black tracking-[0.2em] text-[11px] italic">{item.quantity}un &times; {item.name}</span>
-                              <span className="font-serif font-black text-black text-xl italic">R$ {(item.price * item.quantity).toFixed(2)}</span>
+                          <div key={idx} className="flex gap-6 border-b border-slate-900/5 pb-6 md:pb-8">
+                            {item.imageUrl && (
+                              <div className="w-20 h-20 bg-slate-50 border border-slate-100 flex-shrink-0 overflow-hidden">
+                                <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                              </div>
+                            )}
+                            <div className="flex-1 flex flex-col">
+                              <div className="flex justify-between text-sm md:text-base items-baseline gap-4">
+                                <span className="text-gray-500 uppercase font-black tracking-[0.2em] text-[10px] md:text-[11px] italic">{item.quantity}un &times; {item.name}</span>
+                                <span className="font-serif font-black text-black text-lg md:text-xl italic whitespace-nowrap">R$ {(item.price * item.quantity).toFixed(2)}</span>
+                              </div>
+                              {item.personalizationName && (
+                                <p className="text-[9px] md:text-[10px] font-black uppercase text-[#E30613] tracking-widest mt-2">NOME: {item.personalizationName}</p>
+                              )}
+                              {item.complementDescription && (
+                                <p className="text-[9px] md:text-[10px] font-black uppercase text-black tracking-widest mt-1">DETALHE: {item.complementDescription}</p>
+                              )}
                             </div>
-                            {item.personalizationName && (
-                              <p className="text-[10px] font-black uppercase text-red-600 tracking-widest mt-2">NOME: {item.personalizationName}</p>
-                            )}
-                            {item.complementDescription && (
-                              <p className="text-[10px] font-black uppercase text-black tracking-widest mt-1">DETALHE: {item.complementDescription}</p>
-                            )}
                           </div>
                         ))}
                       </div>
                     </div>
 
-                      <div className="pt-10 mb-20 border-t border-slate-900/5 grid grid-cols-2 gap-8">
+                      <div className="pt-8 md:pt-10 mb-12 md:mb-20 border-t border-slate-900/5 grid grid-cols-2 gap-4 md:gap-8">
                         <div>
-                          <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] mb-2">Método de Pagamento</p>
-                          <p className="text-xl font-serif font-black italic uppercase text-red-600">{selectedOrder.paymentMethod || 'N/A'}</p>
+                          <p className="text-[8px] md:text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] mb-2">Pagamento</p>
+                          <p className="text-lg md:text-xl font-serif font-black italic uppercase text-red-600">{selectedOrder.paymentMethod || 'N/A'}</p>
                         </div>
                         <div>
-                          <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] mb-2">Frete (Calculado)</p>
-                          <p className="text-xl font-serif font-black italic text-black">R$ {selectedOrder.shippingCost?.toFixed(2) || '0.00'}</p>
+                          <p className="text-[8px] md:text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] mb-2">Entrega</p>
+                          <p className="text-lg md:text-xl font-serif font-black italic text-black">R$ {selectedOrder.shippingCost?.toFixed(2) || '0.00'}</p>
                         </div>
                       </div>
 
-                      <div className="pt-20 border-t border-slate-900/10">
-                      <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em] mb-12 text-center">Protocolo de Operação</p>
-                      <div className="space-y-6">
-                        <div className="grid grid-cols-2 gap-8">
+                      <div className="pt-12 md:pt-20 border-t border-slate-900/10">
+                      <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em] mb-10 md:mb-12 text-center">Protocolo de Operação</p>
+                      <div className="space-y-4 md:space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                           <Button 
                             variant={selectedOrder.status === 'processing' ? 'primary' : 'outline'} 
                             size="md" 
-                            className={cn("h-24 text-base font-black uppercase tracking-widest", selectedOrder.status === 'processing' ? 'bg-[#E30613]' : 'border-slate-900/10 text-black')}
+                            className={cn("h-20 md:h-24 text-sm md:text-base font-black uppercase tracking-widest", selectedOrder.status === 'processing' ? 'bg-[#E30613]' : 'border-slate-900/10 text-black')}
                             onClick={() => updateStatus(selectedOrder.id!, 'processing')}
                           >
                             EM ANÁLISE
@@ -292,7 +301,7 @@ export const AdminPanel: React.FC = () => {
                           <Button 
                             variant={selectedOrder.status === 'completed' ? 'primary' : 'outline'} 
                             size="md" 
-                            className={cn("h-24 text-base font-black uppercase tracking-widest", selectedOrder.status === 'completed' ? 'bg-green-600' : 'border-slate-900/10 text-black')}
+                            className={cn("h-20 md:h-24 text-sm md:text-base font-black uppercase tracking-widest", selectedOrder.status === 'completed' ? 'bg-green-600 text-white' : 'border-slate-900/10 text-black')}
                             onClick={() => updateStatus(selectedOrder.id!, 'completed')}
                           >
                             FINALIZAR
@@ -301,7 +310,7 @@ export const AdminPanel: React.FC = () => {
                         <Button 
                           variant="danger" 
                           size="md" 
-                          className="w-full h-24 border border-red-500/20 text-red-600 font-black uppercase tracking-widest hover:bg-red-50"
+                          className="w-full h-20 md:h-24 border border-red-500/20 text-red-600 font-black uppercase tracking-widest hover:bg-red-50"
                           onClick={() => updateStatus(selectedOrder.id!, 'cancelled')}
                         >
                           ANULAR PEDIDO
@@ -327,33 +336,38 @@ export const AdminPanel: React.FC = () => {
             <table className="w-full text-left">
               <thead className="bg-[#FAF9F7] border-b border-slate-900/5 text-slate-400">
                 <tr>
-                  <th className="px-10 py-10 text-[9px] font-black uppercase tracking-[0.5em]">Vista Prévia</th>
-                  <th className="px-10 py-10 text-[9px] font-black uppercase tracking-[0.5em]">Nome do Objeto</th>
-                  <th className="px-10 py-10 text-[9px] font-black uppercase tracking-[0.5em]">Domínio</th>
-                  <th className="px-10 py-10 text-[9px] font-black uppercase tracking-[0.5em]">Valor de Mercado</th>
-                  <th className="px-10 py-10"></th>
+                  <th className="px-4 md:px-10 py-6 md:py-10 text-[9px] font-black uppercase tracking-[0.5em]">Vista</th>
+                  <th className="px-4 md:px-10 py-6 md:py-10 text-[9px] font-black uppercase tracking-[0.5em]">Nome</th>
+                  <th className="px-4 md:px-10 py-6 md:py-10 text-[9px] font-black uppercase tracking-[0.5em] hidden sm:table-cell">Domínio</th>
+                  <th className="px-4 md:px-10 py-6 md:py-10 text-[9px] font-black uppercase tracking-[0.5em]">Valor</th>
+                  <th className="px-4 md:px-10 py-6 md:py-10"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {products.map((product) => (
                   <tr key={product.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-10 py-10">
-                      <div className="w-24 h-32 bg-[#F2F1EE] border border-slate-900/5 overflow-hidden group relative">
+                    <td className="px-4 md:px-10 py-6 md:py-10">
+                      <div className="w-16 md:w-24 h-20 md:h-32 bg-[#F2F1EE] border border-slate-900/5 overflow-hidden group relative">
                         <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" />
                       </div>
                     </td>
-                    <td className="px-10 py-10">
-                      <div className="text-3xl font-serif italic text-black font-black">{product.name}</div>
+                    <td className="px-4 md:px-10 py-6 md:py-10">
+                      <div className="text-xl md:text-3xl font-serif italic text-black font-black leading-tight">{product.name}</div>
+                      <div className="vlm-label sm:hidden !mb-0 !py-1 !px-2 text-[7px] uppercase tracking-[0.4em] font-black mt-2 inline-block">
+                        {product.category}
+                      </div>
                     </td>
-                    <td className="px-10 py-10">
+                    <td className="px-10 py-10 hidden sm:table-cell">
                       <div className="vlm-label !mb-0 !py-2 !px-4 text-[9px] uppercase tracking-[0.4em] font-black">{product.category}</div>
                     </td>
-                    <td className="px-10 py-10 font-serif font-black text-xl italic text-black">
+                    <td className="px-4 md:px-10 py-6 md:py-10 font-serif font-black text-lg md:text-xl italic text-black">
                       R$ {product.price.toFixed(2)}
                     </td>
-                    <td className="px-10 py-10 text-right flex items-center justify-end h-52 gap-8">
-                      <Button variant="outline" size="sm" onClick={() => { setEditingProduct(product); setShowProductModal(true); }} className="border-slate-900/10 text-black">EDITAR</Button>
-                      <Button variant="danger" size="sm" onClick={() => deleteProduct(product.id)} className="bg-red-500 text-white">REMOVER</Button>
+                    <td className="px-4 md:px-10 py-6 md:py-10 text-right">
+                      <div className="flex flex-col sm:flex-row items-center justify-end gap-2 md:gap-8">
+                        <Button variant="outline" size="sm" onClick={() => { setEditingProduct(product); setShowProductModal(true); }} className="w-full sm:w-auto border-slate-900/10 text-black text-[9px] px-4">EDITAR</Button>
+                        <Button variant="danger" size="sm" onClick={() => deleteProduct(product.id)} className="w-full sm:w-auto bg-red-500 text-white text-[9px] px-4">REMOVER</Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -371,39 +385,39 @@ export const AdminPanel: React.FC = () => {
               initial={{ scale: 0.9, opacity: 0, y: 100 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 100 }}
-              className="bg-white p-20 max-w-4xl w-full border border-slate-900/10 shadow-[0px_100px_200px_rgba(0,0,0,0.1)] relative overflow-hidden"
+              className="bg-white p-6 md:p-20 max-w-4xl w-full border border-slate-900/10 shadow-[0px_100px_200px_rgba(0,0,0,0.1)] relative overflow-hidden overflow-y-auto max-h-[90vh]"
             >
               <div className="absolute top-0 left-0 w-full h-2 bg-red-600"></div>
-              <h2 className="text-7xl font-serif italic font-black mb-20 text-black tracking-tighter">Item de Acervo.</h2>
-              <form onSubmit={handleProductSubmit} className="space-y-16">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-20">
-                  <div className="space-y-12">
+              <h2 className="text-4xl md:text-7xl font-serif italic font-black mb-12 md:mb-20 text-black tracking-tighter">Item de Acervo.</h2>
+              <form onSubmit={handleProductSubmit} className="space-y-8 md:space-y-16">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-20">
+                  <div className="space-y-8 md:space-y-12">
                     <div>
-                      <label className="text-[11px] font-black text-slate-300 uppercase tracking-[0.5em] block mb-4">Título da Peça</label>
+                      <label className="text-[10px] md:text-[11px] font-black text-slate-300 uppercase tracking-[0.5em] block mb-4">Título da Peça</label>
                       <input 
                         type="text" 
                         required 
-                        className="vlm-input w-full text-3xl font-serif italic font-black"
+                        className="vlm-input w-full text-xl md:text-3xl font-serif italic font-black"
                         value={editingProduct?.name || ''}
                         onChange={e => setEditingProduct({...editingProduct, name: e.target.value})}
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-12">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 md:gap-12">
                       <div>
-                        <label className="text-[11px] font-black text-slate-300 uppercase tracking-[0.5em] block mb-4">Valor Base (BRL)</label>
+                        <label className="text-[10px] md:text-[11px] font-black text-slate-300 uppercase tracking-[0.5em] block mb-4">Valor Base (BRL)</label>
                         <input 
                           type="number" 
                           step="0.01" 
                           required 
-                          className="vlm-input w-full font-serif font-black text-2xl text-red-600"
+                          className="vlm-input w-full font-serif font-black text-xl md:text-2xl text-red-600"
                           value={editingProduct?.price || ''}
                           onChange={e => setEditingProduct({...editingProduct, price: parseFloat(e.target.value)})}
                         />
                       </div>
                       <div>
-                        <label className="text-[11px] font-black text-slate-300 uppercase tracking-[0.5em] block mb-4">Domínio</label>
+                        <label className="text-[10px] md:text-[11px] font-black text-slate-300 uppercase tracking-[0.5em] block mb-4">Domínio</label>
                         <select 
-                          className="vlm-input w-full text-[11px] font-black uppercase tracking-[0.3em] pt-5"
+                          className="vlm-input w-full text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] pt-4 md:pt-5"
                           value={editingProduct?.category || ''}
                           onChange={e => setEditingProduct({...editingProduct, category: e.target.value})}
                           required
@@ -414,39 +428,39 @@ export const AdminPanel: React.FC = () => {
                       </div>
                     </div>
                     <div>
-                      <label className="text-[11px] font-black text-slate-300 uppercase tracking-[0.5em] block mb-4">Fonte de Mídia (URL)</label>
+                      <label className="text-[10px] md:text-[11px] font-black text-slate-300 uppercase tracking-[0.5em] block mb-4">Fonte de Mídia (URL)</label>
                       <input 
                         type="url" 
                         required 
-                        className="vlm-input w-full text-xs font-mono text-slate-400"
+                        className="vlm-input w-full text-[10px] font-mono text-slate-400"
                         value={editingProduct?.imageUrl || ''}
                         onChange={e => setEditingProduct({...editingProduct, imageUrl: e.target.value})}
                       />
                     </div>
-                    <div className="flex items-center gap-4 bg-slate-50 p-6 border border-slate-900/5">
+                    <div className="flex items-center gap-4 bg-slate-50 p-4 md:p-6 border border-slate-900/5">
                       <input 
                         type="checkbox"
                         id="has-complements-check"
-                        className="w-6 h-6 border-slate-200 text-red-600 focus:ring-red-500"
+                        className="w-5 h-5 md:w-6 md:h-6 border-slate-200 text-red-600 focus:ring-red-500"
                         checked={editingProduct?.hasComplements || false}
                         onChange={e => setEditingProduct({...editingProduct, hasComplements: e.target.checked})}
                       />
-                      <label htmlFor="has-complements-check" className="text-[10px] font-black uppercase tracking-[0.2em] text-black cursor-pointer">Permitir Complementos (+R$ 15,00)</label>
+                      <label htmlFor="has-complements-check" className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.1em] md:tracking-[0.2em] text-black cursor-pointer">Permitir Complementos (+R$ 15,00)</label>
                     </div>
                   </div>
                   <div className="flex flex-col">
-                    <label className="text-[11px] font-black text-slate-300 uppercase tracking-[0.5em] block mb-4">Manifesto Técnico</label>
+                    <label className="text-[10px] md:text-[11px] font-black text-slate-300 uppercase tracking-[0.5em] block mb-4">Manifesto Técnico</label>
                     <textarea 
-                      className="vlm-input w-full flex-1 min-h-[300px] text-base leading-relaxed text-gray-700 resize-none font-sans italic"
+                      className="vlm-input w-full flex-1 min-h-[200px] md:min-h-[300px] text-sm md:text-base leading-relaxed text-gray-700 resize-none font-sans italic"
                       value={editingProduct?.description || ''}
                       onChange={e => setEditingProduct({...editingProduct, description: e.target.value})}
                       placeholder="DESCREVA A ESSÊNCIA DO ITEM..."
                     />
                   </div>
                 </div>
-                <div className="flex gap-8 pt-20">
-                  <Button type="submit" className="flex-1 h-24 text-xl bg-orange-500 font-black">REGISTRAR NO ACERVO</Button>
-                  <Button variant="ghost" onClick={() => setShowProductModal(false)} className="flex-1 text-slate-300 hover:text-black uppercase font-black tracking-widest">ABORTAR</Button>
+                <div className="flex flex-col sm:flex-row gap-4 md:gap-8 pt-12 md:pt-20">
+                  <Button type="submit" className="flex-1 h-16 md:h-24 text-lg md:text-xl bg-orange-500 font-black">REGISTRAR</Button>
+                  <Button variant="ghost" onClick={() => setShowProductModal(false)} className="flex-1 h-12 md:h-auto text-slate-300 hover:text-black uppercase font-black tracking-widest text-xs md:text-sm">ABORTAR</Button>
                 </div>
               </form>
             </motion.div>

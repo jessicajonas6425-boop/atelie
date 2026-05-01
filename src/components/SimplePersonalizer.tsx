@@ -1,57 +1,92 @@
 import React, { useState } from 'react';
-import { Button } from './ui/Button';
+import { Button, cn } from './ui/Button';
 import { Product } from '../types';
 import { Check } from 'lucide-react';
 
 interface SimplePersonalizerProps {
   product: Product;
-  onSave: (name: string, hasComplement: boolean, complementDescription?: string) => void;
+  onSave: (name: string, hasComplement: boolean, complementDescription?: string, size?: string, customPrice?: number) => void;
   onCancel: () => void;
 }
+
+const SIZES = [
+  { label: '350 ML', price: 74.90 },
+  { label: '600 ML', price: 78.00 },
+  { label: '800 ML', price: 85.00 },
+  { label: '1 LITRO', price: 96.00 }
+];
 
 export const SimplePersonalizer: React.FC<SimplePersonalizerProps> = ({ product, onSave, onCancel }) => {
   const [name, setName] = useState('');
   const [hasComplement, setHasComplement] = useState(false);
   const [complementDescription, setComplementDescription] = useState('');
+  const [selectedSize, setSelectedSize] = useState<typeof SIZES[0] | null>(null);
+
+  const isBottle = product.category.toLowerCase().includes('garrafa');
+  const currentBasePrice = isBottle && selectedSize ? selectedSize.price : product.price;
 
   return (
-    <div className="bg-white p-8 md:p-12 border border-slate-900/10 shadow-2xl relative overflow-hidden">
+    <div className="bg-white p-6 md:p-12 border border-slate-900/10 shadow-2xl relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-1.5 bg-[#E30613]"></div>
       
-      <div className="flex flex-col md:flex-row gap-12">
-        <div className="w-full md:w-1/2 aspect-[3/4] bg-slate-50 relative overflow-hidden">
+      <div className="flex flex-col md:flex-row gap-8 md:gap-12">
+        <div className="w-full md:w-1/2 aspect-square md:aspect-[3/4] bg-slate-50 relative overflow-hidden">
           <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <span className="text-4xl font-serif font-black italic text-black/20 uppercase rotate-[-20deg]">
+            <span className="text-2xl md:text-4xl font-serif font-black italic text-black/20 uppercase rotate-[-20deg]">
               {name || 'Seu Nome'}
             </span>
           </div>
         </div>
 
-        <div className="flex-1 space-y-12">
+        <div className="flex-1 space-y-8 md:space-y-12">
           <div>
-            <div className="vlm-label">Personalização.</div>
-            <h2 className="text-5xl font-serif italic font-black text-black leading-none mt-4">{product.name}</h2>
+            <div className="vlm-label">Configuração.</div>
+            <h2 className="text-3xl md:text-5xl font-serif italic font-black text-black leading-none mt-4">{product.name}</h2>
           </div>
 
-          <div className="space-y-8">
+          <div className="space-y-6 md:space-y-8">
+            {isBottle && (
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] block">Escolha o Tamanho (Obrigatório)</label>
+                <div className="grid grid-cols-2 gap-4">
+                  {SIZES.map((size) => (
+                    <button
+                      key={size.label}
+                      onClick={() => setSelectedSize(size)}
+                      className={cn(
+                        "p-4 border text-left transition-all",
+                        selectedSize?.label === size.label 
+                          ? "border-red-600 bg-red-50" 
+                          : "border-slate-100 hover:border-slate-300 bg-white"
+                      )}
+                    >
+                      <p className="text-[10px] font-black tracking-widest text-slate-400 mb-1">{size.label}</p>
+                      <p className="text-lg font-serif font-black italic text-black">R$ {size.price.toFixed(2)}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] block mb-4">Nome para Gravação</label>
               <input 
                 type="text"
                 placeholder="EX: JOÃO SILVA"
-                className="vlm-input w-full text-2xl font-serif italic text-black"
+                className="vlm-input w-full text-xl md:text-2xl font-serif italic text-black"
                 value={name}
                 onChange={(e) => setName(e.target.value.toUpperCase())}
               />
-              <p className="text-[10px] text-slate-400 mt-3 italic font-medium uppercase tracking-widest">Incluso no valor base da peça.</p>
+              <p className="text-[10px] text-slate-400 mt-3 italic font-medium uppercase tracking-widest">Personalização inclusa.</p>
             </div>
 
             <div className="bg-slate-50 p-6 border border-slate-900/5 space-y-6">
               <button 
                 type="button"
+                id="toggle-complement-btn"
                 onClick={() => setHasComplement(!hasComplement)}
-                className="flex items-center gap-6 w-full text-left group"
+                className="flex items-center gap-6 w-full text-left group hover:bg-slate-100 transition-colors p-2 rounded-lg"
               >
                 <div className={`w-8 h-8 border-2 flex items-center justify-center transition-all ${hasComplement ? 'bg-red-600 border-red-600' : 'bg-white border-slate-200'}`}>
                   {hasComplement && <Check className="text-white" size={16} strokeWidth={3} />}
@@ -80,8 +115,8 @@ export const SimplePersonalizer: React.FC<SimplePersonalizerProps> = ({ product,
           <div className="pt-8 border-t border-slate-900/5">
             <div className="flex justify-between items-end mb-10">
               <div>
-                <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] mb-1">Subtotal</p>
-                <p className="text-4xl font-serif font-black italic text-black">R$ {(product.price + (hasComplement ? 15 : 0)).toFixed(2)}</p>
+                <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] mb-1">Subtotal Estimado</p>
+                <p className="text-4xl font-serif font-black italic text-black">R$ {(currentBasePrice + (hasComplement ? 15 : 0)).toFixed(2)}</p>
               </div>
             </div>
             
@@ -89,17 +124,17 @@ export const SimplePersonalizer: React.FC<SimplePersonalizerProps> = ({ product,
               <Button 
                 size="lg" 
                 className="flex-1 bg-red-600 hover:bg-black h-20" 
-                onClick={() => onSave(name, hasComplement, hasComplement ? complementDescription : undefined)}
-                disabled={!name.trim() || (hasComplement && !complementDescription.trim())}
+                onClick={() => onSave(name, hasComplement, hasComplement ? complementDescription : undefined, selectedSize?.label, currentBasePrice)}
+                disabled={!name.trim() || (isBottle && !selectedSize) || (hasComplement && !complementDescription.trim())}
               >
-                ADICIONAR AO PEDIDO
+                CONFIRMAR E COMPRAR
               </Button>
               <Button 
                 variant="ghost" 
                 className="px-8 text-slate-300 hover:text-black uppercase font-black text-[10px] tracking-widest"
                 onClick={onCancel}
               >
-                CANCELAR
+                VOLTAR
               </Button>
             </div>
           </div>

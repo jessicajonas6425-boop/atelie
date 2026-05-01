@@ -36,9 +36,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
         
         <p className="text-[12px] text-gray-700 mb-10 line-clamp-2 font-sans font-medium uppercase tracking-[0.2em] leading-relaxed italic">{product.description}</p>
         
-        <div className="mt-auto flex items-center justify-between pt-10 border-t border-slate-900/5">
-          <span className="text-3xl font-serif font-black italic text-black">R$ {product.price.toFixed(2)}</span>
-          
+        <div className="mt-auto flex items-center justify-end pt-10 border-t border-slate-900/5">
           {isCustomizable ? (
             <Button 
               variant="outline" 
@@ -46,7 +44,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
               className="px-8 border-slate-900/10 text-black hover:bg-black hover:text-white"
               id={`customize-btn-${product.id}`}
             >
-              CRIAR
+              COMPRAR
             </Button>
           ) : (
             <Button 

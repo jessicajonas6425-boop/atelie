@@ -19,6 +19,7 @@ import { SimplePersonalizer } from './components/SimplePersonalizer';
 import { AdminPanel } from './components/AdminPanel';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
 import { AIAssistant } from './components/AIAssistant';
+import { SplashScreen } from './components/SplashScreen';
 import { Button, Input, cn } from './components/ui/Button';
 import { 
   ShoppingBag, 
@@ -111,6 +112,7 @@ export default function App() {
     }
   };
   const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     const productsPath = 'products';
@@ -169,14 +171,16 @@ export default function App() {
     } else {
       setCart([...cart, { productId: product.id, name: product.name, price: product.price, quantity: 1, imageUrl: product.imageUrl }]);
     }
+    setView('checkout');
   };
 
-  const handlePersonalizationSave = (name: string, hasComplement: boolean, complementDescription?: string) => {
+  const handlePersonalizationSave = (name: string, hasComplement: boolean, complementDescription?: string, size?: string, customPrice?: number) => {
     if (customizingProduct) {
+      const finalPrice = customPrice !== undefined ? customPrice : customizingProduct.price;
       setCart([...cart, { 
         productId: customizingProduct.id, 
-        name: `${customizingProduct.name}${hasComplement ? ' + Complemento' : ''}`, 
-        price: customizingProduct.price + (hasComplement ? 15 : 0), 
+        name: `${customizingProduct.name}${size ? ` (${size})` : ''}`, 
+        price: finalPrice + (hasComplement ? 15 : 0), 
         quantity: 1, 
         isCustomized: true,
         personalizationName: name,
@@ -185,7 +189,7 @@ export default function App() {
         imageUrl: customizingProduct.imageUrl
       }]);
     }
-    setView('home');
+    setView('checkout');
   };
 
   const submitOrder = async () => {
@@ -221,22 +225,31 @@ export default function App() {
       const trackingLink = `${window.location.origin}/?orderId=${docRef.id}`;
       const paymentLabels = { pix: 'PIX', credit: 'Cartão de Crédito', debit: 'Cartão de Débito' };
       
-      let message = `*NOVO PEDIDO - ATELIÊ VLM*\n\n`;
-      message += `*Cliente:* ${customerInfo.name}\n`;
+      let message = `*RESUMO DO PEDIDO - ATELIÊ VLM*\n\n`;
+      message += `📌 *DADOS DO CLIENTE*\n`;
+      message += `*Nome:* ${customerInfo.name}\n`;
       message += `*WhatsApp:* ${customerInfo.whatsapp}\n`;
       message += `*CEP:* ${customerInfo.cep}\n\n`;
       
-      message += `*ITENS:*\n`;
+      message += `🛍️ *ITENS ESCOLHIDOS*\n`;
       cart.forEach(item => {
-        message += `- ${item.quantity}x ${item.name} (R$ ${item.price.toFixed(2)})${item.personalizationName ? `\n  Nome: ${item.personalizationName}` : ''}${item.complementDescription ? `\n  Comp: ${item.complementDescription}` : ''}\n`;
+        message += `• ${item.quantity}x ${item.name}\n`;
+        message += `  Valor: R$ ${item.price.toFixed(2)}\n`;
+        if (item.imageUrl) message += `  🖼️ *Foto:* ${item.imageUrl}\n`;
+        if (item.personalizationName) message += `  *Gravação:* ${item.personalizationName}\n`;
+        if (item.complementDescription) message += `  *Complemento:* ${item.complementDescription}\n`;
+        message += `\n`;
       });
       
-      message += `\n*FINANCEIRO:*\n`;
-      message += `Subtotal: R$ ${productsTotal.toFixed(2)}\n`;
+      message += `💰 *FINANCEIRO*\n`;
+      message += `Itens: R$ ${productsTotal.toFixed(2)}\n`;
       message += `Frete: R$ ${shippingCost.toFixed(2)}\n`;
-      message += `*TOTAL: R$ ${total.toFixed(2)}*\n\n`;
-      message += `*PAGAMENTO:* ${paymentLabels[paymentMethod]}\n\n`;
-      message += `Acompanhe pelo link:\n${trackingLink}`;
+      message += `*TOTAL GERAL: R$ ${total.toFixed(2)}*\n\n`;
+      
+      message += `💳 *PAGAMENTO:* ${paymentLabels[paymentMethod]}\n\n`;
+      
+      message += `🔗 *ACOMPANHE SEU PEDIDO COM IMAGENS:*\n`;
+      message += `${trackingLink}`;
       
       const whatsappUrl = `https://wa.me/5511940288573?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, '_blank');
@@ -303,30 +316,29 @@ export default function App() {
     }
   };
 
-  const filteredProducts = activeCategory === 'Todos' 
-    ? products 
-    : products.filter(p => p.category === activeCategory);
+  // Mostra apenas uma garrafa conforme solicitado
+  const filteredProducts = products.filter(p => p.category.toLowerCase().includes('garrafa')).slice(0, 1);
 
   return (
-    <div className="min-h-screen bg-white text-black selection:bg-red-50 font-sans">
+    <div className="min-h-screen bg-white text-black selection:bg-red-50 font-sans overflow-x-hidden">
+      {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
       {/* Top Bar */}
-      <div className="bg-slate-900 text-white py-3 px-8 text-[10px] font-bold uppercase tracking-[0.3em] flex justify-between items-center relative z-50">
-        <div className="flex gap-8">
-          <span className="flex items-center gap-2 font-mono"><Smartphone size={12} className="text-red-500" /> +55 11 94028-8573</span>
-          <span className="hidden md:flex items-center gap-2"><Mail size={12} className="text-red-500" /> atelievlm@gmail.com</span>
+      <div className="bg-slate-900 text-white py-3 px-4 md:px-8 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] flex justify-between items-center relative z-50">
+        <div className="flex gap-4 md:gap-8">
+          <span className="flex items-center gap-2 font-mono"><Smartphone size={12} className="text-red-500" /> <span className="hidden sm:inline">+55 11 94028-8573</span><span className="sm:hidden">WHATSAPP</span></span>
         </div>
-        <div className="flex gap-8">
-          <button onClick={() => setView('tracking')} className="hover:text-red-500 transition-colors">Rastrear Pedido</button>
+        <div className="flex gap-4 md:gap-8">
+          <button onClick={() => setView('tracking')} className="hover:text-red-500 transition-colors">Rastrear</button>
           <button onClick={() => setShowAdminLogin(true)} className="hover:text-red-500 transition-colors">Admin</button>
         </div>
       </div>
 
       {/* Main Header */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-100 px-8 py-8 md:py-10">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-8 md:gap-16">
+      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-100 px-6 md:px-8 py-6 md:py-10">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-6 md:gap-16">
           {/* Logo */}
-          <div className="flex items-baseline space-x-4 cursor-pointer group" onClick={() => setView('home')}>
-            <h1 className="text-5xl font-serif font-black tracking-tighter italic group-hover:text-[#E30613] transition-all duration-500">VLM</h1>
+          <div className="flex items-baseline space-x-4 cursor-pointer group w-full md:w-auto justify-center md:justify-start" onClick={() => setView('home')}>
+            <h1 className="text-4xl md:text-5xl font-serif font-black tracking-tighter italic group-hover:text-[#E30613] transition-all duration-500">VLM</h1>
             <div className="hidden lg:flex flex-col border-l border-slate-200 pl-4">
               <span className="text-[9px] uppercase tracking-[0.4em] font-light leading-none opacity-40">Atelier de</span>
               <span className="text-[9px] uppercase tracking-[0.4em] font-bold text-[#E30613] leading-none mt-1 text-black">Brindes</span>
@@ -334,7 +346,7 @@ export default function App() {
           </div>
 
           {/* Search Bar (Structural Copy) */}
-          <div className="flex-1 w-full relative">
+          <div className="hidden md:block flex-1 w-full relative">
             <input 
               type="text" 
               placeholder="O que você está procurando no ateliê?" 
@@ -344,7 +356,7 @@ export default function App() {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 md:gap-6 w-full md:w-auto justify-between md:justify-end">
             <button 
               onClick={() => setView('checkout')} 
               className="group flex items-center gap-4 bg-slate-50 hover:bg-red-50 px-8 py-4 rounded-full transition-all border border-slate-100 hover:border-red-100"
@@ -423,16 +435,16 @@ export default function App() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="p-8 lg:p-12"
+                className="p-6 md:p-12"
               >
-                <header className="mb-20 relative">
+                <header className="mb-12 md:mb-20 relative">
                   <div className="absolute -top-32 -left-32 w-[40rem] h-[40rem] bg-red-500/5 rounded-full blur-[120px] -z-10"></div>
                   <div className="vlm-label mb-6">Coleção Elite MMXXVI</div>
-                  <h2 className="text-6xl md:text-8xl font-serif leading-[0.9] tracking-tighter mb-10 font-black italic text-black">
+                  <h2 className="text-5xl md:text-8xl font-serif leading-[0.9] tracking-tighter mb-8 md:mb-10 font-black italic text-black">
                     O Melhor em<br/>
                     <span className="text-[#E30613] uppercase not-italic">Brindes.</span>
                   </h2>
-                  <p className="text-slate-500 max-w-xl font-sans font-medium uppercase text-xs tracking-[0.2em] leading-relaxed border-l-2 border-red-500 pl-8 transition-colors duration-1000">
+                  <p className="text-slate-500 max-w-xl font-sans font-medium uppercase text-[10px] md:text-xs tracking-[0.2em] leading-relaxed border-l-2 border-red-500 pl-6 md:pl-8 transition-colors duration-1000">
                     Sua marca merece o extraordinário. Brindes que elevam a percepção de valor e fidelizam com sofisticação.
                   </p>
                 </header>
@@ -476,36 +488,36 @@ export default function App() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -30 }}
-              className="px-8 py-20"
+              className="px-6 md:px-8 py-12 md:py-20"
             >
-              <h2 className="text-6xl font-serif italic tracking-tighter mb-16 text-black leading-none">Seu Orçamento.</h2>
+              <h2 className="text-5xl md:text-6xl font-serif italic tracking-tighter mb-12 md:16 text-black leading-none">Seu Orçamento.</h2>
               {cart.length === 0 ? (
-                <div className="vlm-card p-20 text-center bg-slate-50 border-dashed">
-                  <ShoppingBag className="w-16 h-16 mx-auto mb-8 text-slate-200 stroke-[1px]" />
-                  <p className="text-2xl font-serif italic text-gray-700 mb-10">Não há produtos selecionados para cotação.</p>
+                <div className="vlm-card p-12 md:p-20 text-center bg-slate-50 border-dashed">
+                  <ShoppingBag className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-8 text-slate-200 stroke-[1px]" />
+                  <p className="text-xl md:text-2xl font-serif italic text-gray-700 mb-10">Carrinho vazio.</p>
                   <Button size="lg" onClick={() => setView('home')} id="start-shopping">VER BRINDES</Button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
-                  <div className="space-y-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-20">
+                  <div className="space-y-6 md:space-y-8">
                     {cart.map((item, idx) => (
-                      <div key={idx} className="bg-white border border-slate-100 p-8 flex items-center justify-between group hover:border-red-500/30 transition-all">
+                      <div key={idx} className="bg-white border border-slate-100 p-6 md:p-8 flex items-center justify-between group hover:border-red-500/30 transition-all">
                         <div className="flex-1">
-                          <h4 className="text-2xl font-serif italic text-black mb-1">{item.name}</h4>
+                          <h4 className="text-xl md:text-2xl font-serif italic text-black mb-1">{item.name}</h4>
                           {item.personalizationName && (
                             <p className="text-[10px] font-black uppercase text-red-600 tracking-widest mt-1">NOME: {item.personalizationName}</p>
                           )}
                           {item.complementDescription && (
                             <p className="text-[10px] font-black uppercase text-black tracking-widest mt-1">DETALHE: {item.complementDescription}</p>
                           )}
-                          <p className="text-[11px] text-gray-500 font-bold uppercase tracking-[0.1em] mt-2">{item.quantity} un &times; R$ {item.price.toFixed(2)}</p>
+                          <p className="text-[10px] md:text-[11px] text-gray-400 font-bold uppercase tracking-[0.1em] mt-2">{item.quantity} un &times; R$ {item.price.toFixed(2)}</p>
                         </div>
-                        <span className="text-2xl font-serif font-black text-red-600">R$ {(item.price * item.quantity).toFixed(2)}</span>
+                        <span className="text-xl md:text-2xl font-serif font-black text-red-600">R$ {(item.price * item.quantity).toFixed(2)}</span>
                       </div>
                     ))}
-                    <div className="pt-12 flex flex-col items-end border-t border-slate-100">
-                      <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] mb-2">Total Estimado</span>
-                      <span className="text-7xl font-serif font-black italic tracking-tighter text-black">
+                    <div className="pt-10 flex flex-col items-end border-t border-slate-100">
+                      <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] mb-2">Total Estimado</span>
+                      <span className="text-5xl md:text-7xl font-serif font-black italic tracking-tighter text-black">
                         R$ {cart.reduce((s, i) => s + (i.price * i.quantity), 0).toFixed(2)}
                       </span>
                     </div>
@@ -537,7 +549,7 @@ export default function App() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div>
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] block mb-3">CEP de Entrega</label>
-                          <div className="flex gap-4">
+                          <div className="flex flex-col sm:flex-row gap-4">
                             <input 
                               className="vlm-input flex-1 text-xl font-mono"
                               value={customerInfo.cep}
@@ -548,6 +560,7 @@ export default function App() {
                               variant="outline" 
                               onClick={calculateShipping}
                               disabled={calculatingShipping || customerInfo.cep.length < 8}
+                              className="w-full sm:w-auto h-16 md:h-auto"
                             >
                               {calculatingShipping ? '...' : 'CALCULAR'}
                             </Button>
@@ -603,25 +616,25 @@ export default function App() {
               key="tracking-view"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="max-w-3xl mx-auto px-12 py-32 mt-10 bg-white border border-slate-900/5 shadow-2xl relative"
+              className="max-w-3xl mx-auto px-6 md:px-12 py-20 md:py-32 mt-10 bg-white border border-slate-900/5 shadow-2xl relative"
             >
-              <div className="absolute top-0 right-0 p-12">
+              <div className="absolute top-0 right-0 p-8 md:p-12">
                 <div className="bg-orange-500 text-white px-6 py-2 text-[10px] font-black uppercase tracking-[0.3em]">
                   {trackingOrder.status}
                 </div>
               </div>
 
-              <div className="mb-24">
-                <h2 className="text-7xl font-serif font-black italic tracking-tighter leading-none mb-6">Manifesto.</h2>
-                <p className="text-slate-300 font-mono text-[10px] uppercase tracking-[0.4em]">Reference: {trackingOrder.id}</p>
+              <div className="mb-16 md:mb-24">
+                <h2 className="text-5xl md:text-7xl font-serif font-black italic tracking-tighter leading-none mb-6">Manifesto.</h2>
+                <p className="text-slate-300 font-mono text-[9px] md:text-[10px] uppercase tracking-[0.4em]">Reference: {trackingOrder.id}</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-20">
-                <div className="space-y-16">
-                  <div className="border-l-4 border-red-600 pl-8">
+              <div className="grid grid-cols-1 md:grid-cols-1 gap-12 md:gap-20">
+                <div className="space-y-12 md:space-y-16">
+                  <div className="border-l-4 border-red-600 pl-6 md:pl-8">
                     <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] mb-4">Identificação do Pedido</p>
-                    <p className="text-4xl font-serif italic mb-2 text-black">{trackingOrder.customerName}</p>
-                    <p className="text-xs font-black uppercase text-red-600 tracking-widest">{trackingOrder.customerWhatsapp}</p>
+                    <p className="text-3xl md:text-4xl font-serif italic mb-2 text-black">{trackingOrder.customerName}</p>
+                    <p className="text-[10px] md:text-xs font-black uppercase text-red-600 tracking-widest">{trackingOrder.customerWhatsapp}</p>
                   </div>
 
                   <div>
